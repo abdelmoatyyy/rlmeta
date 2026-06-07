@@ -1,0 +1,574 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>RL Exam 2 — Foundations to Deep RL</title>
+<link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700;800&family=Poppins:wght@500;600;700&display=swap" rel="stylesheet"/>
+<style>
+  :root {
+    --bg:        #f3eeff;
+    --page-bg:   #ece4ff;
+    --white:     #ffffff;
+    --purple:    #7c3aed;
+    --purple-md: #9f67f5;
+    --purple-lt: #c4a8fb;
+    --purple-xl: #ede5ff;
+    --lavender:  #ddd0fd;
+    --text-dark: #2e1b5e;
+    --text-mid:  #6b4fa8;
+    --text-soft: #a08cc8;
+    --correct:   #22c55e;
+    --correct-bg:#dcfce7;
+    --wrong:     #ef4444;
+    --wrong-bg:  #fee2e2;
+    --radius:    16px;
+    --shadow:    0 4px 24px rgba(124,58,237,.13);
+  }
+
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    font-family: 'Nunito', sans-serif;
+    background: var(--page-bg);
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 32px 16px 64px;
+    background-image: radial-gradient(ellipse 70% 60% at 50% 0%, #dcc9ff 0%, transparent 70%);
+  }
+
+  /* Header */
+  header {
+    text-align: center;
+    margin-bottom: 28px;
+    animation: fadeDown .5s ease both;
+  }
+  .header-chip {
+    display: inline-block;
+    background: var(--purple);
+    color: #fff;
+    font-size: .72rem;
+    font-weight: 700;
+    letter-spacing: .12em;
+    text-transform: uppercase;
+    padding: 4px 14px;
+    border-radius: 999px;
+    margin-bottom: 10px;
+  }
+  header h1 {
+    font-family: 'Poppins', sans-serif;
+    font-size: clamp(1.5rem, 4vw, 2rem);
+    font-weight: 700;
+    color: var(--text-dark);
+    line-height: 1.2;
+  }
+  header h1 span { color: var(--purple); }
+  header p { color: var(--text-soft); font-size: .85rem; margin-top: 5px; }
+
+  /* Progress */
+  .progress-wrap {
+    width: 100%;
+    max-width: 680px;
+    margin-bottom: 20px;
+    animation: fadeDown .6s ease both;
+  }
+  .progress-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 8px;
+  }
+  .progress-row span { font-size: .8rem; font-weight: 700; color: var(--text-mid); }
+  .progress-bar { height: 8px; background: var(--lavender); border-radius: 999px; overflow: hidden; }
+  .progress-fill {
+    height: 100%;
+    background: linear-gradient(90deg, var(--purple), var(--purple-md));
+    border-radius: 999px;
+    transition: width .45s cubic-bezier(.4,0,.2,1);
+  }
+
+  /* Card */
+  .card {
+    width: 100%;
+    max-width: 680px;
+    background: var(--white);
+    border-radius: var(--radius);
+    padding: 32px 32px 28px;
+    box-shadow: var(--shadow);
+    border: 1.5px solid #e8d9ff;
+    animation: cardIn .4s cubic-bezier(.22,.61,.36,1) both;
+  }
+
+  .part-label {
+    font-size: .72rem;
+    font-weight: 800;
+    letter-spacing: .1em;
+    text-transform: uppercase;
+    color: var(--purple);
+    background: var(--purple-xl);
+    display: inline-block;
+    padding: 3px 11px;
+    border-radius: 6px;
+    margin-bottom: 14px;
+  }
+  .q-meta { font-size: .78rem; color: var(--text-soft); font-weight: 600; margin-bottom: 8px; }
+  .q-text {
+    font-family: 'Poppins', sans-serif;
+    font-size: 1.08rem;
+    font-weight: 600;
+    color: var(--text-dark);
+    line-height: 1.55;
+    margin-bottom: 24px;
+  }
+
+  /* Options */
+  .options { display: flex; flex-direction: column; gap: 10px; }
+  .option {
+    display: flex;
+    align-items: center;
+    gap: 13px;
+    padding: 13px 16px;
+    border: 2px solid #ede5ff;
+    border-radius: 12px;
+    background: #faf7ff;
+    cursor: pointer;
+    transition: border-color .18s, background .18s, transform .15s, box-shadow .18s;
+    font-size: .95rem;
+    font-weight: 600;
+    color: var(--text-dark);
+    line-height: 1.4;
+  }
+  .option:hover:not(.locked) {
+    border-color: var(--purple-lt);
+    background: var(--purple-xl);
+    transform: translateY(-2px);
+    box-shadow: 0 4px 14px rgba(124,58,237,.12);
+  }
+  .opt-ltr {
+    min-width: 32px;
+    height: 32px;
+    border-radius: 8px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 800;
+    font-size: .8rem;
+    background: var(--lavender);
+    color: var(--purple);
+    flex-shrink: 0;
+    transition: background .18s, color .18s;
+  }
+  .option.correct  { border-color: var(--correct); background: var(--correct-bg); }
+  .option.correct .opt-ltr { background: var(--correct); color: #fff; }
+  .option.wrong    { border-color: var(--wrong); background: var(--wrong-bg); }
+  .option.wrong .opt-ltr   { background: var(--wrong);   color: #fff; }
+  .option.reveal   { border-color: var(--correct); background: var(--correct-bg); }
+  .option.reveal .opt-ltr  { background: var(--correct); color: #fff; }
+  .option.locked   { cursor: default; transform: none !important; box-shadow: none !important; }
+
+  /* Feedback */
+  .feedback {
+    margin-top: 14px;
+    padding: 11px 16px;
+    border-radius: 10px;
+    font-size: .88rem;
+    font-weight: 700;
+    display: none;
+    align-items: center;
+    gap: 9px;
+    animation: fadeUp .25s ease both;
+  }
+  .feedback.show { display: flex; }
+  .feedback.ok  { background: var(--correct-bg); color: #166534; border: 1.5px solid #86efac; }
+  .feedback.err { background: var(--wrong-bg);   color: #991b1b; border: 1.5px solid #fca5a5; }
+
+  /* Nav */
+  .nav {
+    width: 100%;
+    max-width: 680px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-top: 16px;
+  }
+  .score-live {
+    font-size: .82rem;
+    font-weight: 700;
+    color: var(--text-mid);
+    background: var(--white);
+    border: 1.5px solid var(--lavender);
+    border-radius: 8px;
+    padding: 7px 14px;
+  }
+  .score-live span { color: var(--purple); }
+  .btn-next {
+    background: var(--purple);
+    color: #fff;
+    border: none;
+    border-radius: 10px;
+    padding: 11px 30px;
+    font-family: 'Nunito', sans-serif;
+    font-size: .95rem;
+    font-weight: 800;
+    cursor: pointer;
+    transition: background .18s, transform .15s, box-shadow .18s;
+    box-shadow: 0 4px 16px rgba(124,58,237,.3);
+  }
+  .btn-next:hover:not(:disabled) { background: #6d28d9; transform: translateY(-2px); box-shadow: 0 6px 22px rgba(124,58,237,.4); }
+  .btn-next:disabled { opacity: .35; cursor: default; transform: none; box-shadow: none; }
+
+  /* Score screen */
+  #score-screen { display: none; width: 100%; max-width: 680px; animation: cardIn .5s ease both; }
+  .score-card {
+    background: var(--white);
+    border-radius: var(--radius);
+    padding: 44px 36px 40px;
+    text-align: center;
+    box-shadow: var(--shadow);
+    border: 1.5px solid #e8d9ff;
+  }
+  .trophy-icon { font-size: 3.6rem; display: block; margin-bottom: 12px; animation: popIn .5s ease .2s both; }
+  .score-title { font-family: 'Poppins', sans-serif; font-size: 1.6rem; font-weight: 700; color: var(--text-dark); margin-bottom: 4px; }
+  .score-sub   { color: var(--text-soft); font-size: .88rem; margin-bottom: 30px; }
+  .big-score {
+    display: inline-flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    width: 130px;
+    height: 130px;
+    border-radius: 50%;
+    background: var(--purple-xl);
+    border: 4px solid var(--purple-lt);
+    margin-bottom: 24px;
+  }
+  .big-score-num   { font-family: 'Poppins', sans-serif; font-size: 2.6rem; font-weight: 700; color: var(--purple); line-height: 1; }
+  .big-score-denom { font-size: .8rem; color: var(--text-soft); font-weight: 700; }
+  .grade-pill {
+    display: inline-block;
+    padding: 6px 22px;
+    border-radius: 999px;
+    font-weight: 800;
+    font-size: .92rem;
+    margin-bottom: 28px;
+    color: #fff;
+  }
+  .stats-row { display: grid; grid-template-columns: repeat(3,1fr); gap: 12px; margin-bottom: 30px; }
+  .stat { background: var(--bg); border: 1.5px solid #ede5ff; border-radius: 12px; padding: 16px 8px; }
+  .stat-n { font-family: 'Poppins', sans-serif; font-size: 1.6rem; font-weight: 700; display: block; line-height: 1; margin-bottom: 4px; }
+  .stat-n.g { color: var(--correct); }
+  .stat-n.r { color: var(--wrong); }
+  .stat-n.p { color: var(--purple); }
+  .stat-lbl { font-size: .72rem; font-weight: 700; color: var(--text-soft); text-transform: uppercase; letter-spacing: .08em; }
+  .divider { width: 48px; height: 3px; background: var(--lavender); border-radius: 99px; margin: 0 auto 28px; }
+  .btn-restart {
+    background: var(--purple);
+    color: #fff;
+    border: none;
+    border-radius: 10px;
+    padding: 13px 40px;
+    font-family: 'Nunito', sans-serif;
+    font-size: 1rem;
+    font-weight: 800;
+    cursor: pointer;
+    transition: background .18s, transform .15s, box-shadow .18s;
+    box-shadow: 0 4px 18px rgba(124,58,237,.3);
+  }
+  .btn-restart:hover { background: #6d28d9; transform: translateY(-2px); box-shadow: 0 6px 24px rgba(124,58,237,.4); }
+
+  @keyframes fadeDown { from { opacity:0; transform:translateY(-14px); } to { opacity:1; transform:none; } }
+  @keyframes fadeUp   { from { opacity:0; transform:translateY(8px);  } to { opacity:1; transform:none; } }
+  @keyframes cardIn   { from { opacity:0; transform:translateY(20px) scale(.98); } to { opacity:1; transform:none; } }
+  @keyframes popIn    { from { opacity:0; transform:scale(.5); } to { opacity:1; transform:scale(1); } }
+
+  @media (max-width:480px) {
+    .card { padding: 22px 18px 20px; }
+    .score-card { padding: 32px 20px 28px; }
+    .q-text { font-size: 1rem; }
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="header-chip">100 Questions · 4 Exams</div>
+  <h1>Reinforcement <span>Learning</span> Exam</h1>
+  <p>Select an answer for instant feedback</p>
+</header>
+
+<div class="progress-wrap" id="progress-wrap">
+  <div class="progress-row">
+    <span id="prog-label">Question 1 of 100</span>
+    <span id="prog-pct">0%</span>
+  </div>
+  <div class="progress-bar">
+    <div class="progress-fill" id="progress-fill" style="width:0%"></div>
+  </div>
+</div>
+
+<div class="card" id="q-card">
+  <div class="part-label" id="part-label"></div>
+  <div class="q-meta"    id="q-meta"></div>
+  <div class="q-text"    id="q-text"></div>
+  <div class="options"   id="options"></div>
+  <div class="feedback"  id="feedback"></div>
+</div>
+
+<div class="nav" id="nav">
+  <div class="score-live">Score: <span id="live-score">0</span> / <span id="live-total">0</span></div>
+  <button class="btn-next" id="btn-next" disabled onclick="next()">Next →</button>
+</div>
+
+<div id="score-screen">
+  <div class="score-card">
+    <span class="trophy-icon" id="trophy">🎉</span>
+    <div class="score-title">Exam Complete!</div>
+    <div class="score-sub" id="score-msg">Here are your results</div>
+    <div class="divider"></div>
+    <div class="big-score">
+      <div class="big-score-num" id="final-num">0</div>
+      <div class="big-score-denom">out of 100</div>
+    </div><br/>
+    <div class="grade-pill" id="grade-pill">—</div>
+    <div class="stats-row">
+      <div class="stat"><span class="stat-n g" id="s-correct">0</span><div class="stat-lbl">Correct</div></div>
+      <div class="stat"><span class="stat-n r" id="s-wrong">0</span><div class="stat-lbl">Wrong</div></div>
+      <div class="stat"><span class="stat-n p" id="s-pct">0%</span><div class="stat-lbl">Score</div></div>
+    </div>
+    <button class="btn-restart" onclick="restart()">↺ &nbsp; Restart Exam</button>
+  </div>
+</div>
+
+<script>
+const PARTS = [
+  "Exam 1 — Foundations of RL",
+  "Exam 2 — MDPs & Multi-Armed Bandits",
+  "Exam 3 — Core RL Algorithms",
+  "Exam 4 — Deep RL, Rewards & AI"
+];
+const RANGES = [[1,25],[26,50],[51,75],[76,100]];
+const L = ["A","B","C","D"];
+
+const QS = [
+  // Exam 1 – Q1–25
+  {q:"RL primarily learns by:",o:["Labeled examples","Unlabeled clustering","Interacting with environment for rewards","Memorizing rules"],a:2},
+  {q:"Which paradigm has delayed, evaluative feedback?",o:["Supervised","Unsupervised","Reinforcement","Semi-supervised"],a:2},
+  {q:"In the maze example, the agent is:",o:["The maze","The robot","The goal","The +10 reward"],a:1},
+  {q:"Reward for reaching the goal in the maze:",o:["-1","0","+10","+1"],a:2},
+  {q:"Which is NOT a key RL characteristic?",o:["Trial-and-error","Immediate correct answer","Sequential decisions","No labeled data"],a:1},
+  {q:"Supervised learning goal:",o:["Maximize reward","Predict outputs","Discover patterns","Learn policy"],a:1},
+  {q:"Unsupervised learning uses:",o:["Labeled data","Interaction data","Unlabeled data","Reward signals"],a:2},
+  {q:"Teaching a dog with treats best illustrates:",o:["Supervised","Unsupervised","Reinforcement","Transfer learning"],a:2},
+  {q:"Self-driving car learning by trial-and-error (reward for staying on road) is:",o:["Supervised","RL","Unsupervised","Rule-based"],a:1},
+  {q:"A policy π(a|s) is best defined as:",o:["Reward function","Mapping from states to actions","Transition model","Value estimate"],a:1},
+  {q:"Deterministic policy means:",o:["Random actions","Always same action for a state","Probabilistic","Explores 10%"],a:1},
+  {q:"V^π(s) = E[G_t | S_t=s] is the:",o:["Immediate reward","State-value function","Action-value","Policy"],a:1},
+  {q:"Q^π(s,a) estimates:",o:["Immediate reward","Expected return after taking a in s, then following π","Transition prob","Discount"],a:1},
+  {q:"γ ≈ 1 means:",o:["Short-term focus","Long-term planning","Ignore future","Random"],a:1},
+  {q:"Return G_t is:",o:["R_{t+1} only","R_{t+1}+γR_{t+2}+γ²R_{t+3}+...","max reward","average reward"],a:1},
+  {q:"After an action, environment returns:",o:["Labels","Next state and reward","Gradients","Features"],a:1},
+  {q:"In autonomous driving, a state is:",o:["Brake","Car position, speed, nearby vehicles","+100","Policy"],a:1},
+  {q:"Which system mastered Go via self-play RL?",o:["Watson","AlphaGo","Siri","ELIZA"],a:1},
+  {q:"Netflix/YouTube use RL to optimize:",o:["Immediate click","Long-term engagement","Clustering only","Labels"],a:1},
+  {q:"RL limitation:",o:["Needs large labels","Slow and expensive to train","Can't handle dynamic envs","Easy reward design"],a:1},
+  {q:"Value function measures:",o:["Data size","Expected long-term reward","Action probability","Error"],a:1},
+  {q:"Hardest paradigm per course table:",o:["Supervised","Unsupervised","Reinforcement","Equal"],a:2},
+  {q:"Correct loop order:",o:["Act→Reward→Observe","Observe S_t → select A_t → get S_{t+1},R_t → update","Reward→Act","None"],a:1},
+  {q:"In chess, current board configuration is:",o:["Action","Reward","State","Policy"],a:2},
+  {q:"Positive reward for self-driving car:",o:["Crash -500","Speeding -20","Stay in lane +10","Running red light"],a:2},
+  // Exam 2 – Q26–50
+  {q:"Markov Property: future depends only on:",o:["Full history","Current state","Past rewards","Initial state"],a:1},
+  {q:"MDP is formally (S, A, P, R, γ):",o:["States, Actions, Policy, Reward, Goal","States, Actions, Transition, Reward, Discount","Sample, Alpha, Prob, Return, Gamma","None"],a:1},
+  {q:"P(s'|s,a) is:",o:["Reward","Policy","Transition probability","Value"],a:2},
+  {q:"Episodic task example:",o:["Self-driving","Chess","Stock trading","Traffic control"],a:1},
+  {q:"Continuing task example:",o:["Maze","Traffic signal control","Puzzle","Game"],a:1},
+  {q:"Bellman optimality for V(s):",o:["V(s)=r","V(s)=max_a [r+γV(s')]","V(s)=γr","V(s)=Σr"],a:1},
+  {q:"In inventory MDP, action is:",o:["Current stock","Order quantity","Profit","Demand"],a:1},
+  {q:"γ=0 means agent:",o:["Ignores immediate","Cares only about immediate reward","Values future equally","Infinite horizon"],a:1},
+  {q:"Multi-armed bandit is:",o:["Full MDP with states","Stateless decision problem","Supervised","Unsupervised"],a:1},
+  {q:"Central MAB issue:",o:["Overfitting","Exploration-exploitation","Bias-variance","Credit assignment"],a:1},
+  {q:"Exploitation is:",o:["Trying new arm","Choosing best-known arm","Random","Ignoring"],a:1},
+  {q:"ε-greedy with ε=0.1 means:",o:["10% exploit","90% exploit, 10% explore","Always random","Always best"],a:1},
+  {q:"Sample-average Q_t(a) =",o:["sum rewards / N_t(a)","max reward","min reward","γ*reward"],a:0},
+  {q:"Incremental update:",o:["Q_{t+1}=Q_t + [R_t-Q_t]/N_t(a)","Q_{t+1}=R_t","Q_{t+1}=max Q","Q_{t+1}=0"],a:0},
+  {q:"Optimistic initial values (e.g., Q=10) encourage:",o:["Early exploitation","Early exploration","No learning","Overfitting"],a:1},
+  {q:"UCB selects:",o:["argmax[Q_t(a)+c√(ln t/N_t(a))]","Random","min Q","argmax Q only"],a:0},
+  {q:"In UCB, √(ln t/N_t) is:",o:["Reward","Uncertainty exploration bonus","Discount","Learning rate"],a:1},
+  {q:"Bandit key assumption:",o:["State transitions","Rewards stochastic","Actions dependent","Deterministic"],a:1},
+  {q:"Online ads bandit: arms = ads, reward = ?",o:["Click-through","Impressions","Cost","Users"],a:0},
+  {q:"Theoretically grounded systematic method:",o:["ε-greedy","UCB","Random","Optimistic only"],a:1},
+  {q:"Which adapts exploration as counts grow?",o:["Fixed ε","UCB","Neither","Both"],a:1},
+  {q:"Non-Markov driving example needs:",o:["Position only","Driver fatigue in state","Speed only","Lane only"],a:1},
+  {q:"MDP solution is policy that:",o:["Minimizes states","Maximizes cumulative reward","Randomizes","Ignores γ"],a:1},
+  {q:"Value Iteration uses:",o:["Monte Carlo only","Repeated Bellman optimality updates","Policy only","Random"],a:1},
+  {q:"Markov chain A→B=0.7, so A→A = ?",o:["0.7","0.3","0.9","0.1"],a:1},
+  // Exam 3 – Q51–75
+  {q:"Q-learning is:",o:["On-policy model-based","Off-policy model-free","On-policy model-free","Off-policy model-based"],a:1},
+  {q:"Q-learning update uses:",o:["r+γQ(s',a')","r+γ max_a' Q(s',a')","r only","average"],a:1},
+  {q:"SARSA update uses:",o:["max Q(s',a')","actual Q(s',a') from policy","random","min"],a:1},
+  {q:"Safer near cliff:",o:["Q-learning","SARSA","Equal","Neither"],a:1},
+  {q:"Model-based RL advantage:",o:["Works unknown","Better planning, faster learning","Simpler","No model"],a:1},
+  {q:"Model-free RL:",o:["Learns P(s'|s,a)","Learns directly from experience without model","Requires model","Uses DP only"],a:1},
+  {q:"On-policy learns from:",o:["Current behavior policy","Different target policy","Random","Model"],a:0},
+  {q:"Off-policy example:",o:["SARSA","Q-learning","REINFORCE","Actor only"],a:1},
+  {q:"Monte Carlo learns:",o:["Each step","After complete episodes","With bootstrapping","With model"],a:1},
+  {q:"TD learning combines:",o:["MC and DP","Supervised+unsupervised","Model only","None"],a:0},
+  {q:"V(s)←V(s)+α[r+γV(s')-V(s)] is:",o:["MC","TD(0)","Q-learning","Policy gradient"],a:1},
+  {q:"Policy gradient optimizes directly:",o:["Q-values","Policy parameters π(a|s)","Rewards","Transitions"],a:1},
+  {q:"Best for continuous steering angle:",o:["Tabular Q","Policy Gradient","K-means","Decision tree"],a:1},
+  {q:"REINFORCE increases prob of actions that gave:",o:["Low reward","High reward","Zero reward","Random"],a:1},
+  {q:"Actor in Actor-Critic:",o:["Evaluates","Chooses actions/updates policy","Stores replay","Computes P"],a:1},
+  {q:"Critic in Actor-Critic:",o:["Chooses actions","Estimates value function","Generates data","Sets γ"],a:1},
+  {q:"Dynamic Programming requires:",o:["Unknown model","Known environment model","No rewards","Large data"],a:1},
+  {q:"Policy Iteration repeats:",o:["Evaluation then improvement","Only eval","Only improve","Random"],a:0},
+  {q:"Which does NOT bootstrap?",o:["TD","Q-learning","Monte Carlo","SARSA"],a:2},
+  {q:"Value-based method:",o:["Policy Gradient","Q-learning","REINFORCE","PPO"],a:1},
+  {q:"Hybrid method:",o:["Q-learning","SARSA","Actor-Critic","MC"],a:2},
+  {q:"Actor-Critic vs pure policy gradient:",o:["Faster, more stable","Slower","Needs model","Discrete only"],a:0},
+  {q:"Tabular value methods struggle with:",o:["Small states","Large/high-dimensional spaces","Deterministic","Episodic"],a:1},
+  {q:"TD updates:",o:["Wait episode end","Immediately after step","Never","Yearly"],a:1},
+  {q:"Learns optimal policy while exploring:",o:["SARSA","Q-learning","On-policy only","MC only"],a:1},
+  // Exam 4 – Q76–100
+  {q:"Deep RL combines RL with:",o:["Decision trees","Neural networks","K-means","Linear regression"],a:1},
+  {q:"DQN for Atari: input/output:",o:["Pixels → Q-values","Q-values → pixels","Rewards → actions","States → model"],a:0},
+  {q:"Experience replay helps by:",o:["Increasing correlation","Breaking correlation, improving stability","Slowing learning","Removing data"],a:1},
+  {q:"Target networks are:",o:["Updated every step","Updated periodically for stability","Unused","Same as online"],a:1},
+  {q:"Double DQN reduces:",o:["Underestimation","Overestimation bias","Exploration","γ"],a:1},
+  {q:"DDPG learns:",o:["Stochastic discrete","Deterministic policies for continuous control","Tabular only","Random"],a:1},
+  {q:"PPO stabilizes by:",o:["Clipping policy updates","Raising α","Removing rewards","Ignoring critic"],a:0},
+  {q:"Positive reward example:",o:["Hit wall -50","Stay in lane +10","Crash -100","Speed -20"],a:1},
+  {q:"Negative reward is to:",o:["Encourage","Discourage bad behavior","Explore","Stop learning"],a:1},
+  {q:"Sparse reward means:",o:["Every step","Only at goal","Continuous","Always negative"],a:1},
+  {q:"Credit assignment problem:",o:["Which actions caused delayed rewards","Choosing α","Overfitting","Labeling"],a:0},
+  {q:"High learning rate α:",o:["Slow stable","Fast but potentially unstable","No effect","Zero learning"],a:1},
+  {q:"Turing Test proposed:",o:["1956","1950","1980","2000"],a:1},
+  {q:"Dartmouth Conference (AI birth):",o:["1950","1956","1970","1985"],a:1},
+  {q:"ELIZA was:",o:["Game AI","NLP conversation simulator","Robot","Chess"],a:1},
+  {q:"Rule-based component that applies rules:",o:["Knowledge base","Inference engine","Working memory","Sensor"],a:1},
+  {q:"Forward chaining:",o:["Goal→data","Data→apply rules forward","Random","Backward only"],a:1},
+  {q:"Deduction:",o:["Specific→general","General rule→specific conclusion","Best explanation","Guess"],a:1},
+  {q:"Induction conclusion is:",o:["Guaranteed","Probable, not certain","False","Always true"],a:1},
+  {q:"Abduction seeks:",o:["Certainty","Simplest/most likely explanation","Random","Deduction"],a:1},
+  {q:"Overfitting:",o:["Poor train, good test","Excellent train, poor test","Both poor","Both perfect"],a:1},
+  {q:"Prevent overfitting via:",o:["More complexity","Regularization, more data, dropout","Less data","Higher degree poly"],a:1},
+  {q:"Unsupervised dimensionality reduction:",o:["Linear regression","PCA","Q-learning","SARSA"],a:1},
+  {q:"RL limitation:",o:["Needs labels","Difficult reward design","Can't handle sequential","Easy training"],a:1},
+  {q:"Which is NOT an RL application in notes?",o:["Robotics","Finance trading","Spam filtering with labeled data","Traffic control"],a:2}
+];
+
+let cur = 0, score = 0, answered = false;
+
+function getPart(i) {
+  for (let p = 0; p < RANGES.length; p++)
+    if (i+1 >= RANGES[p][0] && i+1 <= RANGES[p][1]) return p;
+  return 0;
+}
+
+function render() {
+  answered = false;
+  const q = QS[cur];
+  const p = getPart(cur);
+
+  const pct = Math.round(cur / 100 * 100);
+  document.getElementById('progress-fill').style.width = pct + '%';
+  document.getElementById('prog-label').textContent = `Question ${cur+1} of 100`;
+  document.getElementById('prog-pct').textContent = pct + '%';
+
+  document.getElementById('part-label').textContent = PARTS[p];
+  document.getElementById('q-meta').textContent = `Question ${cur+1}`;
+  document.getElementById('q-text').textContent = q.q;
+
+  const opts = document.getElementById('options');
+  opts.innerHTML = '';
+  q.o.forEach((txt, i) => {
+    const d = document.createElement('div');
+    d.className = 'option';
+    d.innerHTML = `<span class="opt-ltr">${L[i]}</span><span>${txt}</span>`;
+    d.onclick = () => pick(i, d);
+    opts.appendChild(d);
+  });
+
+  const fb = document.getElementById('feedback');
+  fb.className = 'feedback';
+  fb.textContent = '';
+  document.getElementById('btn-next').disabled = true;
+  document.getElementById('live-score').textContent = score;
+  document.getElementById('live-total').textContent = cur;
+
+  const card = document.getElementById('q-card');
+  card.style.animation = 'none';
+  void card.offsetHeight;
+  card.style.animation = 'cardIn .4s cubic-bezier(.22,.61,.36,1) both';
+}
+
+function pick(i, el) {
+  if (answered) return;
+  answered = true;
+  const correct = QS[cur].a;
+  const all = document.querySelectorAll('.option');
+  all.forEach(o => o.classList.add('locked'));
+
+  const fb = document.getElementById('feedback');
+  if (i === correct) {
+    el.classList.add('correct');
+    score++;
+    fb.className = 'feedback ok show';
+    fb.innerHTML = '✅ Correct!';
+  } else {
+    el.classList.add('wrong');
+    all[correct].classList.add('reveal');
+    fb.className = 'feedback err show';
+    fb.innerHTML = `❌ Wrong — correct answer: <strong>${L[correct]}) ${QS[cur].o[correct]}</strong>`;
+  }
+
+  document.getElementById('btn-next').disabled = false;
+  document.getElementById('live-score').textContent = score;
+  document.getElementById('live-total').textContent = cur + 1;
+}
+
+function next() {
+  if (!answered) return;
+  cur++;
+  if (cur >= QS.length) showScore();
+  else render();
+}
+
+function showScore() {
+  document.getElementById('q-card').style.display = 'none';
+  document.getElementById('nav').style.display = 'none';
+  document.getElementById('progress-wrap').style.display = 'none';
+
+  const pct = Math.round(score / 100 * 100);
+  document.getElementById('score-screen').style.display = 'block';
+  document.getElementById('final-num').textContent = score;
+  document.getElementById('s-correct').textContent = score;
+  document.getElementById('s-wrong').textContent = 100 - score;
+  document.getElementById('s-pct').textContent = pct + '%';
+
+  let trophy, msg, grade, color;
+  if      (pct >= 90) { trophy='🏆'; grade='A+ Outstanding';   msg='Exceptional mastery of RL!';                  color='#7c3aed'; }
+  else if (pct >= 80) { trophy='🥇'; grade='A  Excellent';     msg='Strong understanding across all topics.';     color='#6d28d9'; }
+  else if (pct >= 70) { trophy='🥈'; grade='B  Good';          msg='Solid work — review a few areas.';            color='#8b5cf6'; }
+  else if (pct >= 60) { trophy='🥉'; grade='C  Average';       msg='Decent effort, more practice recommended.';   color='#a78bfa'; }
+  else                { trophy='📚'; grade='D  Keep Studying'; msg="Don't give up — review and try again!";       color='#c4b5fd'; }
+
+  document.getElementById('trophy').textContent = trophy;
+  document.getElementById('score-msg').textContent = msg;
+  const pill = document.getElementById('grade-pill');
+  pill.textContent = grade;
+  pill.style.background = color;
+}
+
+function restart() {
+  cur = 0; score = 0; answered = false;
+  ['q-card','nav','progress-wrap'].forEach(id => document.getElementById(id).style.display = '');
+  document.getElementById('score-screen').style.display = 'none';
+  render();
+}
+
+render();
+</script>
+</body>
+</html>
